@@ -60,10 +60,17 @@ def circuit_break(org_id: str, db: Session = Depends(get_db)):
 def evidence(org_id: str, db: Session = Depends(get_db)):
     ledger = PostgresLedger(db)
     report = ledger.verify(org_id)
+    events = ledger.export_events(org_id)
+
     decision = None
     if not report.get("ok", False):
-        decision = rollback_v0(org_id=org_id, reason=report.get("reason", "unknown"), last_verified_hash="GENESIS")
-    return build_evidence_bundle(org_id, report, decision)
+        decision = rollback_v0(
+            org_id=org_id,
+            reason=report.get("reason", "unknown"),
+            last_verified_hash="GENESIS",
+        )
+
+    return build_evidence_bundle(org_id, report, events, decision)
 
 @app.get("/export/{org_id}")
 def export(org_id: str, db: Session = Depends(get_db)):
