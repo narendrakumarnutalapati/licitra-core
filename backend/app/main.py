@@ -1,6 +1,9 @@
-﻿from fastapi import FastAPI, HTTPException, Depends
+﻿import os
+from fastapi import FastAPI, HTTPException, Depends
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
 
 load_dotenv()
 
@@ -12,6 +15,10 @@ from .db import engine, SessionLocal
 from .models import LedgerEventModel
 from .db import Base
 from .ledger_db import PostgresLedger
+
+def require_dev_mode():
+    if os.getenv("DEV_MODE") != "1":
+        raise HTTPException(status_code=404, detail="not found")
 
 app = FastAPI(title="LICITRA Core MVP (Postgres)", version="0.2.0")
 
@@ -32,7 +39,11 @@ def health():
 @app.post("/events", response_model=EventOut)
 def ingest_event(e: EventIn, db: Session = Depends(get_db)):
     ledger = PostgresLedger(db)
-    out = ledger.append(e.org_id, e.event_id, e.payload)
+    try:
+        out = ledger.append(e.org_id, e.event_id, e.payload)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="duplicate event_id for org")
     return EventOut(**out)
 
 @app.get("/verify/{org_id}")
@@ -42,6 +53,7 @@ def verify_chain(org_id: str, db: Session = Depends(get_db)):
 
 @app.post("/dev/reset/{org_id}")
 def dev_reset(org_id: str, db: Session = Depends(get_db)):
+    require_dev_mode()
     ledger = PostgresLedger(db)
     ledger.dev_reset(org_id)
     return {"ok": True, "org_id": org_id}
@@ -86,8 +98,27 @@ def export(org_id: str, db: Session = Depends(get_db)):
 
 @app.post("/tamper/{org_id}/{event_id}")
 def tamper(org_id: str, event_id: str, db: Session = Depends(get_db)):
+    require_dev_mode()
     ledger = PostgresLedger(db)
     ok = ledger.dev_tamper_payload(org_id, event_id, {"tampered": True})
+    if not ok:
+        raise HTTPException(status_code=404, detail="event not found")
+    return {"ok": True}
+
+@app.post("/tamper-prev/{org_id}/{event_id}")
+def tamper_prev(org_id: str, event_id: str, db: Session = Depends(get_db)):
+    require_dev_mode()
+    ledger = PostgresLedger(db)
+    ok = ledger.dev_tamper_prev_hash(org_id, event_id, "BADPREV")
+    if not ok:
+        raise HTTPException(status_code=404, detail="event not found")
+    return {"ok": True}
+
+@app.post("/dev/delete/{org_id}/{event_id}")
+def dev_delete(org_id: str, event_id: str, db: Session = Depends(get_db)):
+    require_dev_mode()
+    ledger = PostgresLedger(db)
+    ok = ledger.dev_delete_event(org_id, event_id)
     if not ok:
         raise HTTPException(status_code=404, detail="event not found")
     return {"ok": True}
