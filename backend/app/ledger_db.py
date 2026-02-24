@@ -95,3 +95,23 @@ class PostgresLedger:
         res = self.db.execute(q)
         self.db.commit()
         return res.rowcount > 0
+    
+    def export_events(self, org_id: str) -> list[dict]:
+        from sqlalchemy import select
+        q = (
+            select(LedgerEventModel)
+            .where(LedgerEventModel.org_id == org_id)
+            .order_by(LedgerEventModel.id.asc())
+        )
+        rows = list(self.db.execute(q).scalars().all())
+        out = []
+        for ev in rows:
+            out.append({
+                "org_id": ev.org_id,
+                "event_id": ev.event_id,
+                "prev_hash": ev.prev_hash,
+                "current_hash": ev.current_hash,
+                "payload_cjson": ev.payload_cjson,
+                "created_at": str(ev.created_at),
+            })
+        return out

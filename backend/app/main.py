@@ -65,6 +65,18 @@ def evidence(org_id: str, db: Session = Depends(get_db)):
         decision = rollback_v0(org_id=org_id, reason=report.get("reason", "unknown"), last_verified_hash="GENESIS")
     return build_evidence_bundle(org_id, report, decision)
 
+@app.get("/export/{org_id}")
+def export(org_id: str, db: Session = Depends(get_db)):
+    ledger = PostgresLedger(db)
+    report = ledger.verify(org_id)
+    events = ledger.export_events(org_id)
+    return {
+        "org_id": org_id,
+        "verify_report": report,
+        "events": events,
+        "format_version": "0.1"
+    }
+
 @app.post("/tamper/{org_id}/{event_id}")
 def tamper(org_id: str, event_id: str, db: Session = Depends(get_db)):
     ledger = PostgresLedger(db)
