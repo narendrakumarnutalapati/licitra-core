@@ -1,0 +1,24 @@
+﻿# Secrets
+.env
+*.pem
+*.key
+secrets*
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.envrc
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
