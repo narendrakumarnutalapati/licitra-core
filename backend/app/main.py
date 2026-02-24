@@ -64,3 +64,11 @@ def evidence(org_id: str, db: Session = Depends(get_db)):
     if not report.get("ok", False):
         decision = rollback_v0(org_id=org_id, reason=report.get("reason", "unknown"), last_verified_hash="GENESIS")
     return build_evidence_bundle(org_id, report, decision)
+
+@app.post("/tamper/{org_id}/{event_id}")
+def tamper(org_id: str, event_id: str, db: Session = Depends(get_db)):
+    ledger = PostgresLedger(db)
+    ok = ledger.dev_tamper_payload(org_id, event_id, {"tampered": True})
+    if not ok:
+        raise HTTPException(status_code=404, detail="event not found")
+    return {"ok": True}

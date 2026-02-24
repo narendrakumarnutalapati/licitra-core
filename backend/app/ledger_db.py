@@ -83,3 +83,15 @@ class PostgresLedger:
     def dev_reset(self, org_id: str) -> None:
         self.db.execute(delete(LedgerEventModel).where(LedgerEventModel.org_id == org_id))
         self.db.commit()
+    
+    def dev_tamper_payload(self, org_id: str, event_id: str, new_payload: Dict[str, Any]) -> bool:
+        from sqlalchemy import update
+        payload_cjson = canonicalize(new_payload)
+        q = (
+            update(LedgerEventModel)
+            .where(LedgerEventModel.org_id == org_id, LedgerEventModel.event_id == event_id)
+            .values(payload_cjson=payload_cjson)
+        )
+        res = self.db.execute(q)
+        self.db.commit()
+        return res.rowcount > 0
