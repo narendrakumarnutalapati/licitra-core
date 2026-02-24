@@ -43,3 +43,14 @@ def dev_reset(org_id: str):
     ledger._by_org[org_id] = []
     return {"ok": True, "org_id": org_id}
 
+
+from .evidence import build_evidence_bundle
+
+@app.get("/evidence/{org_id}")
+def evidence(org_id: str):
+    report = ledger.verify(org_id)
+    decision = None
+    if not report.get("ok", False):
+        decision = rollback_v0(org_id=org_id, reason=report.get("reason", "unknown"), last_verified_hash="GENESIS")
+    return build_evidence_bundle(org_id, report, decision)
+
