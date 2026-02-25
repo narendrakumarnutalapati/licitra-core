@@ -45,20 +45,44 @@ def evidence_pdf_bytes(evidence: dict, max_events: int = 10) -> bytes:
     line(checksum, 18)
     line("")
 
-    # Head/tail hashes
+        # Head/tail hashes + link proof
     if events:
         first = events[0]
         last = events[-1]
-        line("Chain summary:")
-        line(f"first.event_id: {first.get('event_id')} prev={first.get('prev_hash')} cur={first.get('current_hash')}")
-        line(f"last.event_id: {last.get('event_id')} prev={last.get('prev_hash')} cur={last.get('current_hash')}")
+
+        line("Chain summary:", 18)
+        line(f"events.count: {len(events)}")
+        line(f"first.event_id: {first.get('event_id')}")
+        line(f"  first.prev_hash: {first.get('prev_hash')}")
+        line(f"  first.current_hash: {first.get('current_hash')}")
+        line(f"last.event_id: {last.get('event_id')}")
+        line(f"  last.prev_hash: {last.get('prev_hash')}")
+        line(f"  last.current_hash: {last.get('current_hash')}")
         line("")
 
-        # Last N events table-ish
-        line(f"Last {min(max_events, len(events))} events (event_id, current_hash prefix):", 18)
-        for ev in events[-max_events:]:
-            ch = (ev.get("current_hash") or "")[:16]
-            line(f"- {ev.get('event_id')}  {ch}…")
+        # Link proof on the tail (strongest human-readable proof)
+        n = min(max_events, len(events))
+        tail = events[-n:]
+        line(f"Chain link proof (tail {n} events):", 18)
+
+        prev_cur = None
+        for i, ev in enumerate(tail):
+            eid = ev.get("event_id")
+            prev_h = ev.get("prev_hash")
+            cur_h = ev.get("current_hash")
+
+            # expected linkage: prev_hash == previous event's current_hash
+            ok_link = True
+            if prev_cur is not None and prev_h != prev_cur:
+                ok_link = False
+
+            prev_short = (prev_h or "")[:16]
+            cur_short = (cur_h or "")[:16]
+            status = "OK" if ok_link else "BROKEN"
+
+            line(f"- {eid}: prev={prev_short}… cur={cur_short}… link={status}")
+            prev_cur = cur_h
+
         line("")
 
     # Decision
