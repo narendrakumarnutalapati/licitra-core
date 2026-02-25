@@ -115,3 +115,24 @@ class PostgresLedger:
                 "created_at": str(ev.created_at),
             })
         return out
+    
+    def dev_tamper_prev_hash(self, org_id: str, event_id: str, new_prev_hash: str) -> bool:
+        from sqlalchemy import update
+        q = (
+            update(LedgerEventModel)
+            .where(LedgerEventModel.org_id == org_id, LedgerEventModel.event_id == event_id)
+            .values(prev_hash=new_prev_hash)
+        )
+        res = self.db.execute(q)
+        self.db.commit()
+        return res.rowcount > 0
+
+    def dev_delete_event(self, org_id: str, event_id: str) -> bool:
+        from sqlalchemy import delete
+        q = delete(LedgerEventModel).where(
+            LedgerEventModel.org_id == org_id,
+            LedgerEventModel.event_id == event_id,
+        )
+        res = self.db.execute(q)
+        self.db.commit()
+        return res.rowcount > 0
