@@ -26,3 +26,7 @@ Thumbs.db
 # Generated evidence bundles
 evidence_*.json
 
+
+# Generated reports
+*.pdf
+
