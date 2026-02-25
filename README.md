@@ -1,11 +1,32 @@
-﻿# licitra-core (private)
+# LICITRA (Core)
 
-Core implementation repository for LICITRA.
+Cryptographically Verifiable Runtime Integrity for Agentic AI Systems.
 
-- FastAPI backend + PostgreSQL ledger
-- Per-organization hash-chain logging (SHA-256)
+LICITRA provides tamper-evident runtime audit trails for autonomous AI agents using
+hash-chained semantic events, PostgreSQL persistence, and forensic evidence exports.
+
+## Key Capabilities
 - Deterministic canonical JSON hashing
-- Verification endpoints
-- Rollback v0 (circuit breaker)
+- Per-organization hash-chained event ledger (SHA-256)
+- PostgreSQL persistence
+- Verification endpoint (`/verify/{org_id}`)
+- Governance evidence bundle export (`/evidence/{org_id}`)
+- Dev-only tamper/reset endpoints gated by `DEV_MODE`
 
-NOTE: Keep secrets out of git (.env is ignored). Use .env.example as template.
+## Repo Layout
+- `backend/` FastAPI service + database models
+- `test-vectors/` deterministic hashing test vectors
+- `architecture/` diagrams and design notes
+- `docs/` implementation notes (if present)
+
+## Quickstart (Local)
+1) Create `.env` from `.env.example`  
+2) Set `DATABASE_URL` to your Postgres connection string  
+3) Run:
+```bash
+python -m uvicorn backend.app.main:app --reload
+
+Evidence + Experiments
+See: https://github.com/narendrakumarnutalapati/licitra-evidence
+
+
