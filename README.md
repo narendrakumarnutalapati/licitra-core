@@ -5,6 +5,9 @@ Cryptographically Verifiable Runtime Integrity for Agentic AI Systems.
 LICITRA provides tamper-evident runtime audit trails for autonomous AI agents using
 hash-chained semantic events, PostgreSQL persistence, and forensic evidence exports.
 
+## Architecture
+![Architecture](architecture/overview.png)
+
 ## Key Capabilities
 - Deterministic canonical JSON hashing
 - Per-organization hash-chained event ledger (SHA-256)
